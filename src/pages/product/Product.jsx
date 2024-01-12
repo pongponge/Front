@@ -1,6 +1,6 @@
 import axios from 'axios';
 import React, { useEffect } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate} from 'react-router-dom'
 import { useRecoilState } from 'recoil';
 import { productState } from '@recoils/product';
 
@@ -9,7 +9,6 @@ import HeartIcon from '@components/product/HeartIcon';
 
 function Product() {
     const navigate = useNavigate();
-    const { id } = useParams();
 
     const [products, setProducts] = useRecoilState(productState);
 
@@ -153,8 +152,10 @@ function Product() {
                                 <div className="col-lg-9">
                                 <div>
                                 <div className="row g-4 justify-content-center">
-                                {products?.resp?.map((product) => (
+                                {products?.resp
+                                ?.filter((product) => product.state === '판매중').map((product) => (
                                     <div key={product.product_id} className="col-md-6 col-lg-6 col-xl-4">
+                                        {product.state === '판매중' && (
                                     <div className="rounded position-relative">
                                         <div className=" border border-lightgray">
                                         {/* 이미지 표시 */}
@@ -172,6 +173,7 @@ function Product() {
                                         </div>
                                         </div>
                                     </div>
+                                        )}
                                     </div>
                                 ))}
                                     </div>

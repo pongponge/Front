@@ -1,22 +1,28 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import HeartIcon from '@components/product/HeartIcon';
-
+import { useNavigate } from 'react-router-dom';
 import { productState } from '@recoils/product';
 import { userState } from '@recoils/users';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
 
 
-function ProductDetail() {
+function Pay() {
   const [showModal, setShowModal] = useState(false);
-
+  const localstorage = window.localStorage;
   const navigate = useNavigate();
-  
-  // const setLoginUser = useSetRecoilState(userState);
+
+  useEffect(() => {
+    if (!localstorage.user && user.email === '') {
+      alert('로그인이 필요합니다.');
+      navigate('/login');
+    }
+  });
 
   const product = useRecoilValue(productState);
   const user = useRecoilValue(userState);
+  const setLoginUser = useSetRecoilState(userState);
 
   const productPrice = product.sale_price;
   const userPoint = user.point;
@@ -31,36 +37,38 @@ function ProductDetail() {
     setShowModal(false);
   };
 
-  // const { register, handleSubmit, setValue, formState: { errors } } = useForm({
-  //   defaultValues: {
-  //     point: user?.point,
-  //   },
-  //   mode: 'onBlur'
-  // });
+  const { handleSubmit } = useForm({
+    defaultValues: {
+      point: finalPoint,
+    },
+    mode: 'onBlur'
+  });
 
-  // const submitEvent = useCallback(async (data) => {
-  //   // console.log(data);
-  //   const sendData = {
-  //     id: user.id,
-  //     data: {
-       
-  //     }
-  //   }
-  //   try {
-  //     // eslint-disable-next-line no-unused-vars
-  //     const resp = await axios({
-  //       method: 'PUT',
-  //       url: 'http://localhost:8000/users/updatePoint',
-  //       data: sendData
-  //     })
-  //     navigate('/login');
-  //   } catch (error) {
-  //     console.error(error)
-  //   }
-  // }, [navigate, user.id]);
+  const submitEvent = useCallback(async (data) => {
+    try {
+    if (user.point < product.sale_price) {
+      alert('포인트가 부족합니다.');
+      return; 
+    }
+      const resp = await axios.put('http://localhost:8000/users/updatePoint', {
+        point: finalPoint,
+        user_id: user.id 
+      });
 
-  // const errorEvent = (error) => console.error(error)
+      const updateStateResp = await axios.put('http://localhost:8000/product/updateState', {
+        product_id: product.product_id,
+      });
 
+      console.log(updateStateResp);
+      setLoginUser(resp.data.data);
+
+      alert('결제 완료.');
+      navigate('/product');
+    } catch (error) {
+      console.error(error);
+    }
+  }, [finalPoint, navigate, setLoginUser, user.id, user.point, product.sale_price, product.product_id]);
+  
 
   return (
     <div>
@@ -69,6 +77,7 @@ function ProductDetail() {
       </p>
 
       {showModal && (
+         <form className="row" onSubmit={handleSubmit(submitEvent)}>
         <div className="modal" style={{ display: showModal ? 'block' : 'none'}}>
           <div className="modal-content p-0">
             <span className="close" onClick={closePaymentModal}>&times;</span>
@@ -96,7 +105,7 @@ function ProductDetail() {
                   <div className="text-center mt-4">
                     <button 
               className="btn border-secondary rounded-pill px-5 py-3 text-primary text-uppercase ml-4"
-              type="button">결제하기</button>
+              type="submit">결제하기</button>
                   </div>
                 </div>
               </div>
@@ -104,10 +113,11 @@ function ProductDetail() {
             <button onClick={closePaymentModal} className="btn border-secondary rounded-0 w-100 py-3 text-black text-uppercase" type="button">close</button>
           </div>
         </div>
+        </form>
       )}
     </div>
  
   );
 }
 
-export default ProductDetail;
+export default Pay;
